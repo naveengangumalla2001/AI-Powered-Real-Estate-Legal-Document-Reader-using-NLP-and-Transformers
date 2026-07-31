@@ -1,9 +1,5 @@
-# Professional Streamlit UI template
-# Replace your current streamlit_app.py with this file.
-
 import streamlit as st
 import tempfile
-import time
 
 from pdf_reader import read_pdf
 from ner import extract_entities
@@ -12,84 +8,176 @@ from summarizer import summarize_document
 from question_answer import answer_question
 from risk_detector import detect_risks
 
-st.set_page_config(page_title="AI Real Estate Legal Document Reader", page_icon="🏠", layout="wide")
+# ==========================================
+# Page Configuration
+# ==========================================
+
+st.set_page_config(
+    page_title="AI Real Estate Legal Document Reader",
+    page_icon="🏠",
+    layout="wide"
+)
+
+# ==========================================
+# Sidebar
+# ==========================================
 
 st.sidebar.title("🏠 AI Document Reader")
-st.sidebar.markdown("### Features")
-st.sidebar.markdown("- 📄 PDF Upload\n- 🔍 Text Extraction\n- 🤖 BERT NER\n- 📝 BART Summary\n- ⚠ Risk Detection\n- ❓ Question Answering")
-st.sidebar.markdown("---")
-st.sidebar.info("Developed by **Naveen Kumar**")
+
+st.sidebar.markdown("""
+### Features
+
+✅ PDF Upload
+
+✅ Text Extraction
+
+✅ Named Entity Recognition (NER)
+
+✅ Document Summary
+
+✅ Risk Detection
+
+✅ Question Answering
+""")
+
+# ==========================================
+# Main Title
+# ==========================================
 
 st.title("🏠 AI-Powered Real Estate Legal Document Reader")
-uploaded_file = st.file_uploader("📄 Upload PDF", type=["pdf"])
 
-if uploaded_file:
-    start = time.time()
+st.write(
+    "Upload a real estate legal document and analyze it using NLP and Transformers."
+)
 
-    c1,c2,c3 = st.columns(3)
-    c1.metric("File", uploaded_file.name)
-    c2.metric("Size (KB)", round(uploaded_file.size/1024,2))
-    c3.metric("Type","PDF")
+# ==========================================
+# Upload PDF
+# ==========================================
 
-    with tempfile.NamedTemporaryFile(delete=False,suffix=".pdf") as f:
-        f.write(uploaded_file.read())
-        path = f.name
+uploaded_file = st.file_uploader(
+    "📄 Upload a PDF Document",
+    type=["pdf"]
+)
 
-    progress = st.progress(0)
-    progress.progress(10)
-    text = read_pdf(path)
-    progress.progress(30)
+# ==========================================
+# Process Uploaded PDF
+# ==========================================
+
+if uploaded_file is not None:
+
+    st.success("✅ PDF Uploaded Successfully!")
+
+    st.write("**File Name:**", uploaded_file.name)
+    st.write("**File Size:**", round(uploaded_file.size / 1024, 2), "KB")
+
+    # Save uploaded PDF
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_file:
+        temp_file.write(uploaded_file.read())
+        temp_path = temp_file.name
+
+    # Read PDF
+    text = read_pdf(temp_path)
+
+    # ==========================================
+    # View Extracted Text
+    # ==========================================
+
+    with st.expander("📄 View Extracted Text"):
+
+        st.text_area(
+            "PDF Content",
+            text,
+            height=350
+        )
+
+    # ==========================================
+    # NER
+    # ==========================================
+
     entities = extract_entities(text[:1000])
-    progress.progress(50)
+
     result = organize_entities(entities)
-    progress.progress(70)
-    summary = summarize_document(text)
-    progress.progress(90)
+
+    # ==========================================
+    # Summary
+    # ==========================================
+
+    with st.spinner("Generating Summary..."):
+        summary = summarize_document(text)
+
+    # ==========================================
+    # Risk Detection
+    # ==========================================
+
     risks = detect_risks(text)
-    progress.progress(100)
 
-    st.success("Analysis Completed")
+    # ==========================================
+    # Two Column Layout
+    # ==========================================
 
-    a,b,c = st.columns(3)
-    a.metric("Words", len(text.split()))
-    b.metric("Characters", len(text))
-    c.metric("Pages", max(1,text.count("\f")+1))
+    col1, col2 = st.columns(2)
 
-    with st.expander("View Extracted Text"):
-        st.text_area("Text", text, height=300)
+    with col1:
 
-    l,r = st.columns(2)
+        st.subheader("📌 Extracted Information")
 
-    with l:
-        st.subheader("Entities")
-        for k,v in result.items():
-            st.write("**"+k+"**")
-            if v:
-                for i in v:
-                    st.write("•",i)
+        for key, value in result.items():
+
+            if value:
+                st.write(f"**{key}:** {', '.join(value)}")
             else:
-                st.write("None")
+                st.write(f"**{key}:** None")
 
-    with r:
-        st.subheader("Risk Analysis")
-        if risks:
-            for risk in risks:
-                st.error(risk)
+    with col2:
+
+        st.subheader("⚠ Risk Detection")
+
+        if len(risks) == 0:
+            st.success("✅ No Risks Detected")
         else:
-            st.success("No risks detected")
+            for risk in risks:
+                st.warning(risk)
 
-    st.subheader("Summary")
-    st.text_area("Generated Summary", summary, height=180)
+    # ==========================================
+    # Summary Output
+    # ==========================================
 
-    q = st.text_input("Ask a question")
-    if st.button("Get Answer") and q.strip():
-        st.info(answer_question(q,text))
+    st.subheader("📝 Document Summary")
 
-    report = f"SUMMARY\n\n{summary}\n\nRISKS\n\n" + ("\n".join(risks) if risks else "No risks detected")
+    st.success(summary)
 
-    st.download_button("📥 Download Analysis Report", report, file_name="analysis_report.txt")
+    # ==========================================
+    # Question Answering
+    # ==========================================
 
-    st.success(f"Processing Time: {time.time()-start:.2f} seconds")
+    st.subheader("❓ Ask Questions")
+
+    question = st.text_input(
+        "Enter your question",
+        placeholder="Example: Who is the seller?"
+    )
+
+    if st.button("Get Answer"):
+
+        if question.strip() == "":
+            st.warning("Please enter a question.")
+
+        else:
+
+            with st.spinner("Finding answer..."):
+
+                answer = answer_question(question, text)
+
+            st.success("Answer")
+
+            st.info(answer)
+
+# ==========================================
+# Footer
+# ==========================================
 
 st.markdown("---")
-st.caption("Built with Python • Streamlit • Transformers • NLP")
+
+st.caption(
+    "Developed using Python • Streamlit • Transformers • NLP"
+)
