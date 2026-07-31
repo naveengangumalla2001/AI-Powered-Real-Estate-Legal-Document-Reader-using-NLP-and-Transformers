@@ -1,12 +1,12 @@
 import streamlit as st
 import tempfile
 
-from utils.pdf_reader import read_pdf
-from utils.ner import extract_entities
-from utils.entity_formatter import organize_entities
-from utils.summarizer import summarize_document
-from utils.risk_detector import detect_risks
-from utils.question_answer import answer_question
+from pdf_reader import read_pdf
+from ner import extract_entities
+from entity_formatter import organize_entities
+from summarizer import summarize_text
+from question_answer import answer_question
+from risk_detector import detect_risksn
 
 # ==========================================
 # Page Configuration
