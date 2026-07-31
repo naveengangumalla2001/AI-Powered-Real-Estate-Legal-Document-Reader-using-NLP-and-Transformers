@@ -1,0 +1,10 @@
+streamlit
+transformers
+torch
+pdfplumber
+PyMuPDF
+sentencepiece
+accelerate
+huggingface_hub
+tokenizers
+safetensors
