@@ -1,3 +1,6 @@
+import re
+
+
 def is_valid_entity(word):
     """
     Check whether the extracted entity is valid.
@@ -16,7 +19,7 @@ def is_valid_entity(word):
     return True
 
 
-def organize_entities(entities):
+def organize_entities(entities, text):
 
     result = {
         "Person": [],
@@ -26,12 +29,15 @@ def organize_entities(entities):
         "Date": []
     }
 
+    # -----------------------------
+    # BERT NER
+    # -----------------------------
+
     for entity in entities:
 
         label = entity["entity_group"]
         word = entity["word"].strip()
 
-        # Skip invalid entities
         if not is_valid_entity(word):
             continue
 
@@ -47,12 +53,28 @@ def organize_entities(entities):
             if word not in result["Location"]:
                 result["Location"].append(word)
 
-        elif label == "MONEY":
-            if word not in result["Money"]:
-                result["Money"].append(word)
+    # -----------------------------
+    # REGEX FOR MONEY
+    # -----------------------------
 
-        elif label == "DATE":
-            if word not in result["Date"]:
-                result["Date"].append(word)
+    money_pattern = r"Rs\.?\s?[\d,]+/?-?"
+
+    money = re.findall(money_pattern, text)
+
+    for m in money:
+        if m not in result["Money"]:
+            result["Money"].append(m)
+
+    # -----------------------------
+    # REGEX FOR DATE
+    # -----------------------------
+
+    date_pattern = r"\d{1,2}(?:st|nd|rd|th)?\s+(?:day\s+of\s+)?[A-Za-z]+,\s+\d{4}"
+
+    dates = re.findall(date_pattern, text)
+
+    for d in dates:
+        if d not in result["Date"]:
+            result["Date"].append(d)
 
     return result
