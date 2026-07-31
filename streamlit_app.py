@@ -96,7 +96,7 @@ if uploaded_file is not None:
 
     entities = extract_entities(text[:1000])
 
-    result = organize_entities(entities)
+    result = organize_entities(entities, text)
 
     # ==========================================
     # Summary
